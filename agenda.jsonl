@@ -1,0 +1,30 @@
+{"id": "ag01", "tipo": "evento", "titulo": "Clase de PLN", "fecha": "2026-02-09", "hora": "15:00", "lugar": "aula 1205", "personas": [], "asignatura": "PLN", "prioridad": null}
+{"id": "ag02", "tipo": "tarea", "titulo": "Entregar la práctica 1 de PLN", "fecha": "2026-02-15", "hora": null, "lugar": null, "personas": [], "asignatura": "PLN", "prioridad": "alta"}
+{"id": "ag03", "tipo": "evento", "titulo": "Tutoría con Javier", "fecha": "2026-02-12", "hora": "17:00", "lugar": "despacho 3204", "personas": ["Javier"], "asignatura": "PLN", "prioridad": null}
+{"id": "ag04", "tipo": "evento", "titulo": "Laboratorio de Redes", "fecha": "2026-02-11", "hora": "10:00", "lugar": "laboratorio 2", "personas": [], "asignatura": "Redes", "prioridad": null}
+{"id": "ag05", "tipo": "evento", "titulo": "Examen parcial de Estadística", "fecha": "2026-02-20", "hora": "09:00", "lugar": "aula magna", "personas": [], "asignatura": "Estadística", "prioridad": null}
+{"id": "ag06", "tipo": "tarea", "titulo": "Comprar el regalo de cumpleaños de Lucía", "fecha": "2026-02-14", "hora": null, "lugar": null, "personas": ["Lucía"], "asignatura": null, "prioridad": null}
+{"id": "ag07", "tipo": "evento", "titulo": "Dentista", "fecha": "2026-02-12", "hora": "10:00", "lugar": "Clínica Dental Sonrisa", "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag08", "tipo": "evento", "titulo": "Cena con Marta y Pablo", "fecha": "2026-02-13", "hora": "21:00", "lugar": "La Tagliatella", "personas": ["Marta", "Pablo"], "asignatura": null, "prioridad": null}
+{"id": "ag09", "tipo": "tarea", "titulo": "Pagar el segundo plazo de la matrícula", "fecha": "2026-02-18", "hora": null, "lugar": null, "personas": [], "asignatura": null, "prioridad": "alta"}
+{"id": "ag10", "tipo": "evento", "titulo": "Entrenamiento de baloncesto", "fecha": "2026-02-10", "hora": "19:00", "lugar": "polideportivo", "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag11", "tipo": "evento", "titulo": "Reunión del grupo de Bases de Datos", "fecha": "2026-02-10", "hora": "12:00", "lugar": "biblioteca", "personas": [], "asignatura": "Bases de Datos", "prioridad": null}
+{"id": "ag12", "tipo": "tarea", "titulo": "Leer el capítulo 3 del Jurafsky", "fecha": "2026-02-16", "hora": null, "lugar": null, "personas": [], "asignatura": "PLN", "prioridad": "baja"}
+{"id": "ag13", "tipo": "evento", "titulo": "Partido de fútbol sala", "fecha": "2026-02-14", "hora": "11:00", "lugar": "pabellón", "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag14", "tipo": "tarea", "titulo": "Llamar a la abuela", "fecha": "2026-02-15", "hora": null, "lugar": null, "personas": ["abuela"], "asignatura": null, "prioridad": null}
+{"id": "ag15", "tipo": "evento", "titulo": "Médico de cabecera", "fecha": "2026-02-17", "hora": "08:30", "lugar": "centro de salud", "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag16", "tipo": "tarea", "titulo": "Renovar el abono de transporte", "fecha": "2026-02-28", "hora": null, "lugar": null, "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag17", "tipo": "evento", "titulo": "Charla de empresa sobre IA", "fecha": "2026-02-19", "hora": "12:30", "lugar": "salón de actos", "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag18", "tipo": "tarea", "titulo": "Enviar el CV a la oferta de prácticas", "fecha": "2026-02-13", "hora": null, "lugar": null, "personas": [], "asignatura": null, "prioridad": "alta"}
+{"id": "ag19", "tipo": "evento", "titulo": "Fiesta de cumpleaños de Lucía", "fecha": "2026-02-14", "hora": "20:00", "lugar": "casa de Lucía", "personas": ["Lucía"], "asignatura": null, "prioridad": null}
+{"id": "ag20", "tipo": "tarea", "titulo": "Estudiar para el parcial de Estadística", "fecha": "2026-02-19", "hora": null, "lugar": null, "personas": [], "asignatura": "Estadística", "prioridad": "alta"}
+{"id": "ag21", "tipo": "evento", "titulo": "Peluquería", "fecha": "2026-02-11", "hora": "18:30", "lugar": null, "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag22", "tipo": "tarea", "titulo": "Devolver los libros a la biblioteca", "fecha": "2026-02-10", "hora": null, "lugar": "biblioteca", "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag23", "tipo": "evento", "titulo": "Clase de inglés", "fecha": "2026-02-10", "hora": "16:00", "lugar": "academia", "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag24", "tipo": "evento", "titulo": "Revisión del examen de Álgebra", "fecha": "2026-02-16", "hora": "11:00", "lugar": "despacho 2105", "personas": ["García"], "asignatura": "Álgebra", "prioridad": null}
+{"id": "ag25", "tipo": "tarea", "titulo": "Poner la lavadora", "fecha": null, "hora": null, "lugar": null, "personas": [], "asignatura": null, "prioridad": "baja"}
+{"id": "ag26", "tipo": "evento", "titulo": "Videollamada con Carlos", "fecha": "2026-02-11", "hora": "21:00", "lugar": null, "personas": ["Carlos"], "asignatura": null, "prioridad": null}
+{"id": "ag27", "tipo": "tarea", "titulo": "Preparar la presentación de Redes", "fecha": "2026-02-17", "hora": null, "lugar": null, "personas": [], "asignatura": "Redes", "prioridad": "alta"}
+{"id": "ag28", "tipo": "evento", "titulo": "Concierto en el WiZink", "fecha": "2026-02-21", "hora": "20:30", "lugar": "WiZink Center", "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag29", "tipo": "tarea", "titulo": "Comprar el material de dibujo", "fecha": "2026-02-12", "hora": null, "lugar": null, "personas": [], "asignatura": null, "prioridad": null}
+{"id": "ag30", "tipo": "evento", "titulo": "Reunión con la tutora del TFG", "fecha": "2026-02-18", "hora": "10:00", "lugar": "despacho 4012", "personas": ["Elena"], "asignatura": "TFG", "prioridad": null}
