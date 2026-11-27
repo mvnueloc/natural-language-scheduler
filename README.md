@@ -53,7 +53,7 @@ Las dependencias directas están en `requirements.in`. `requirements.txt` tiene 
 ## Orden de ejecución
 
 1. `1_corpus.ipynb`: genera `mi_train.jsonl` y `mi_validacion.jsonl` (una sola vez)
-2. `2A_intencion.ipynb`, `2B_extraccion.ipynb`, `2C_consulta.ipynb`: generan `resultados_*.json` y `tarea_*.py`
+2. `2A_intencion.ipynb`, `2B_extraccion.ipynb`, `2C_consulta.ipynb`: generan `resultados/resultados_*.json` y `tarea_*.py`
 3. `3_evaluacion.ipynb`: tabla comparativa, experimentos E1–E4 y `generar_predicciones`
 4. `4_asistente.ipynb`: asistente y celda de demostración
 

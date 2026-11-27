@@ -146,7 +146,19 @@ La tabla~\ref{tab:prepro} muestra que cada paso reduce la dispersión del vocabu
 % Presupuesto: 1,5 páginas · Fases 2-4. Descripción breve y decisiones de diseño (sin repetir teoría).
 
 \subsection{Tarea A · Intención}
-\pendiente{Fase 2: A1 reglas, A2 BoW + NB, A3 TF-IDF + RL, A4 Word2Vec, A5 vectores preentrenados. Fase 3: A6 embeddings de frase + RL, A7 + RF/MLP, A8 LLM zero/few-shot.}
+Todos los enfoques están en \cod{tarea\_a.py}, y los entrenables son \textit{pipelines} de scikit-learn que incluyen su propio preprocesado (\cod{normalizar}), de modo que el modelo guardado en \cod{modelos/} se aplica directamente al texto crudo. Los hiperparámetros se eligen con validación cruzada estratificada de 5 particiones \textbf{sobre \cod{mi\_train}}; la validación solo se usa para medir.
+
+\paragraph{A1 · Reglas.} 14 expresiones regulares sobre el texto en minúsculas, sin tildes y con las abreviaturas expandidas, aplicadas por prioridad: \cod{otro} evidente (el tiempo, fútbol, «recomiéndame»: frases con fechas y «cuándo» que no son de agenda) $\rightarrow$ \cod{borrar} (\textit{borr-, elimin-, quit-, cancel-}, tras quitar las negaciones «no borres») $\rightarrow$ \cod{completar} («ya\dots» sin «ya no», «he + participio», \textit{tacha}) $\rightarrow$ \cod{modificar} (\textit{cambi-, muev-, retras-}, «ahora es»; protegiendo «pasado mañana») $\rightarrow$ \cod{buscar} (\textit{cuándo, dónde, a qué hora}, «tenía») $\rightarrow$ \cod{consultar} («qué tengo», «estoy libre») $\rightarrow$ crear. Entre tarea y evento decide la hora («a las 5» $\rightarrow$ evento) y las marcas de tarea (\textit{tengo que, recuérdame, antes del, urgente}). Las órdenes explícitas («apunta», «recuérdame») desactivan las reglas de consulta y búsqueda.
+
+\paragraph{A2 · BoW + Naive Bayes.} \cod{CountVectorizer} + \cod{MultinomialNB}. La validación cruzada elige texto normalizado, solo unigramas y $\alpha=0{,}1$ (los bigramas empeoran: con 308 frases casi todos son únicos).
+
+\paragraph{A3 · TF-IDF + regresión logística.} Unión de TF-IDF de palabras (1--2-gramas) y de n-gramas de caracteres \cod{char\_wb} (2--4), con \textit{tf} sublineal y $C=10$. Los n-gramas de caracteres comparten subcadenas entre variantes con faltas o abreviaturas (\textit{bórralo/borra}, \textit{peluqeria}).
+
+\paragraph{A4 · Word2Vec propio.} \textit{Skip-gram} de gensim (100 dimensiones, 50 épocas, \cod{workers=1} y semilla fija para que sea reproducible) entrenado solo con las frases de \cod{mi\_train}; cada frase es la media de sus vectores, seguida de regresión logística. Con unas 3\,000 palabras de entrenamiento los vectores no capturan semántica: las palabras más parecidas a \textit{borra} son \textit{han, juego, gano}.
+
+\paragraph{A5 · Vectores preentrenados.} Media de los vectores de 300 dimensiones de \cod{es\_core\_news\_md} + regresión logística ($C=0{,}1$). Como los vectores son de palabras con tilde, el mejor preprocesado expande abreviaturas y números sin quitar tildes. Promediar solo las palabras de contenido (sin stopwords) empeora, como en E2.
+
+\pendiente{Fase 3: A6 embeddings de frase + RL, A7 + RF/MLP, A8 LLM zero/few-shot.}
 
 \subsection{Tarea B · Extracción}
 \pendiente{Fase 4: normalización (\cod{normalizacion.py}), B1 reglas, B2 spaCy + reglas, B3 BETO + MLP/RF (BIO), B4 LLM con JSON.}
@@ -158,17 +170,62 @@ La tabla~\ref{tab:prepro} muestra que cada paso reduce la dispersión del vocabu
 \section{Tabla comparativa y discusión}\label{sec:tabla}
 % Presupuesto: 2 páginas · Fases 2-5. Una fila por enfoque; columnas del enunciado.
 
-\pendiente{Fase 5: tres tablas (A, B, C) con: métrica principal, frases normales, frases difíciles, datos de entrenamiento, ms por frase, tamaño del modelo, ¿interpretable? + comentario por tarea.}
+\begin{table}[h]
+  \centering\small
+  \begin{tabular}{@{}lrrrrrrl@{}}
+    \toprule
+    Enfoque & F1 macro & Normales & Difíciles & Datos entr. & ms/frase & Tamaño & ¿Interpr.? \\
+    \midrule
+    A1 reglas                    & \textbf{0,908} & 0,953 & \textbf{0,845} & 0 (reglas) & 0,04 & 2 KB & sí \\
+    A2 BoW + Naive Bayes         & 0,713 & 0,776 & 0,639 & 308 frases & 0,03 & 66 KB & sí \\
+    A3 TF-IDF + RL               & 0,896 & \textbf{0,961} & 0,808 & 308 frases & 0,06 & 379 KB & parcial \\
+    A4 Word2Vec propio + RL      & 0,607 & 0,619 & 0,581 & 308 frases & 0,04 & 205 KB & no \\
+    A5 vectores spaCy + RL       & 0,843 & 0,889 & 0,771 & preentr. + 308 & 0,28 & 23 MB & no \\
+    \bottomrule
+  \end{tabular}
+  \caption{Tarea A en validación (77 frases, 31 difíciles). El tamaño de A1 es el de sus expresiones regulares; el de A5 incluye la tabla de vectores de spaCy. \pendiente{fase 3: A6--A8.}}
+  \label{tab:A}
+\end{table}
+
+\paragraph{Tarea A (fase 2).} Las reglas son el mejor enfoque clásico y el más robusto en frases difíciles, porque normalizan la mensajería antes de buscar los patrones. Pero en \cod{mi\_train}, donde se escribieron, sacan 0,991: una de cada diez frases nuevas ya se les escapa (paráfrasis como «Fuera lo del basket», «pásalo a\dots»). A3 casi empata sin escribir ninguna regla y es el mejor en frases normales; los n-gramas de caracteres son lo que lo separa de A2, que no generaliza a palabras no vistas. A5 demuestra que los vectores preentrenados sí aportan (0,843 frente a 0,607 de A4 con el mismo clasificador), a cambio de un modelo 60 veces mayor y más lento. Todos pierden entre 4 y 15 puntos en las frases difíciles.
+
+\pendiente{Fase 5: tablas B y C, columnas manuales revisadas y comentario por tarea.}
 
 % =====================================================================
 \section{Experimentos}\label{sec:experimentos}
 % Presupuesto: 3 páginas · Fases 2, 3 y 5.
 
 \subsection{E1 · Curva de aprendizaje}
-\pendiente{Fases 2-3: figura con A2, A3, A6, A7 (25/50/100/todas, $\geq$3 semillas, media $\pm$ desviación) y A8 como línea horizontal.}
+Entrenamos con 25, 50, 100 y las 308 frases de \cod{mi\_train} (submuestras estratificadas por intención, 5 semillas) y medimos en la validación completa (figura~\ref{fig:curva}). Las dos curvas siguen subiendo al llegar a las 308 frases, así que más datos seguirían ayudando. A3 va por delante en todos los tamaños y la distancia crece con los datos (0,05 con 25 frases, 0,18 con todas). Con unas 3 frases por intención ninguno pasa de 0,5, y ninguno alcanza a las reglas, que no necesitan datos.
+\pendiente{Fase 3: añadir A6, A7 y la línea horizontal de A8; ¿a partir de cuántos ejemplos gana cada uno al LLM?}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.62\linewidth]{curva_aprendizaje.png}
+  \caption{E1: F1 macro en validación frente al número de frases de entrenamiento (media $\pm$ desviación de 5 semillas). Con todas las frases la desviación es 0 porque el conjunto es siempre el mismo.}
+  \label{fig:curva}
+\end{figure}
 
 \subsection{E2 · Ablación del preprocesado}
-\pendiente{Fases 2-3: tabla \{original, normalizado, sin stopwords, stemming\} $\times$ \{A2, A3, A6\}.}
+\begin{table}[h]
+  \centering\small
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    & \multicolumn{2}{c}{Todas (77)} & \multicolumn{2}{c}{Difíciles (31)} \\
+    \cmidrule(lr){2-3}\cmidrule(l){4-5}
+    Preprocesado & A2 & A3 & A2 & A3 \\
+    \midrule
+    original (sin cambios)                          & 0,700 & 0,841 & 0,512 & 0,802 \\
+    normalizado (minúsc., tildes, abrev., números)  & \textbf{0,713} & \textbf{0,896} & \textbf{0,639} & 0,808 \\
+    + sin stopwords                                 & 0,611 & 0,795 & 0,549 & \textbf{0,834} \\
+    + stemming                                      & 0,576 & 0,805 & 0,494 & \textbf{0,834} \\
+    \bottomrule
+  \end{tabular}
+  \caption{E2: F1 macro en validación según el preprocesado (configuraciones acumulativas). \pendiente{fase 3: columna A6.}}
+  \label{tab:E2}
+\end{table}
+
+La normalización es la mejor configuración para los dos modelos de conteo (tabla~\ref{tab:E2}): une variantes de la misma palabra (\textit{mñn/mañana}, \textit{QUÉ/qué}) y reduce la dispersión, sobre todo en las frases difíciles de A2 (+0,13). Quitar stopwords \textbf{perjudica} ($-0{,}10$ en ambos): aunque conservamos \textit{no, ya, qué, cuándo}, la lista de spaCy quita \textit{lo, me, he, se}, que separan clases («lo de\dots» en \cod{borrar} y \cod{modificar}, «he pagado» en \cod{completar}). El stemming no recupera lo perdido. En las frases difíciles, A3 mejora sin stopwords (0,834), pero con 31 frases es una diferencia de una o dos frases.
 
 \subsection{E3 · Robustez}
 \pendiente{Fase 5: normales vs.\ difíciles para cada enfoque de A, B y C, desglosado por el campo \cod{dificultad}.}
@@ -195,8 +252,9 @@ La tabla~\ref{tab:prepro} muestra que cada paso reduce la dispersión del vocabu
 \begin{itemize}
   \item \textbf{Corpus pequeño y escrito por nosotros}: 385 frases, el 45\,\% del vocabulario son hápax y las frases difíciles las hemos escrito nosotros mismos, con el riesgo de que reflejen nuestro estilo y no el del test oculto.
   \item \textbf{Fecha fija}: todas las fechas relativas se resuelven respecto al 9-2-2026; algunas expresiones («el próximo martes», «el finde que viene») son ambiguas y las hemos evitado en el corpus.
+  \item \textbf{Validación pequeña}: con 77 frases (31 difíciles), una frase mal clasificada mueve la F1 macro más de un punto; diferencias como la de A1 y A3 (0,012) no son significativas.
 \end{itemize}
-\pendiente{Fases 2-6: añadir las limitaciones que aparezcan.}
+\pendiente{Fases 3-6: añadir las limitaciones que aparezcan.}
 
 % =====================================================================
 \section{Uso de IA generativa}\label{sec:ia}
@@ -209,6 +267,7 @@ La tabla~\ref{tab:prepro} muestra que cada paso reduce la dispersión del vocabu
 % Presupuesto: 1/4 página · se va completando en cada fase.
 
 Python 3.12 con las versiones fijadas en \cod{requirements.txt} (spaCy 3.8 con \cod{es\_core\_news\_md} 3.8.0, scikit-learn 1.9, NLTK 3.10). Semilla \cod{random\_state=0} en la partición. Orden de ejecución: \cod{1\_corpus} $\rightarrow$ \cod{2A}, \cod{2B}, \cod{2C} $\rightarrow$ \cod{3\_evaluacion} $\rightarrow$ \cod{4\_asistente}. Las figuras de esta memoria se generan en los notebooks y se guardan en \cod{resultados/}.
-\pendiente{Fases 2-6: semillas de los modelos, modelos guardados en \cod{modelos/}, hardware y tiempos.}
+Tarea A: validación cruzada con \cod{StratifiedKFold(5, shuffle=True, random\_state=0)}, \cod{random\_state=0} en las regresiones logísticas y Word2Vec con \cod{seed=0} y \cod{workers=1} (gensim 4.4), que da los mismos vectores en ejecuciones distintas. El enfoque elegido se guarda en \cod{modelos/tarea\_a.joblib} y lo carga \cod{tarea\_a.predecir\_intencion}.
+\pendiente{Fases 3-6: semillas del resto de modelos, hardware y tiempos.}
 
 \end{document}

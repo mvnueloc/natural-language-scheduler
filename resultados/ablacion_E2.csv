@@ -1,0 +1,7 @@
+,todas,todas,difíciles,difíciles
+,A2,A3,A2,A3
+preprocesado,,,,
+original,0.7,0.841,0.512,0.802
+normalizado,0.713,0.896,0.639,0.808
+sin_stopwords,0.611,0.795,0.549,0.834
+stemming,0.576,0.805,0.494,0.834
