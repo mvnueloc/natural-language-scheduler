@@ -1,0 +1,214 @@
+% Memoria de la práctica final de PLN 2026/27 · Asistente de agenda en lenguaje natural
+% Compilar desde la carpeta memoria/:  pdflatex memoria.tex  (dos veces, para referencias)
+% Las figuras se leen de ../resultados/ (las generan los notebooks).
+% Límite: 12 páginas. Cada sección indica la fase que la completa y su presupuesto de páginas.
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noquoting,es-tabla]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+% Solo paquetes incluidos en BasicTeX (sin multirow ni enumitem): listas compactas a mano
+\let\itemizeoriginal\itemize
+\renewcommand{\itemize}{\itemizeoriginal\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}\setlength{\topsep}{2pt}}
+
+\graphicspath{{../resultados/}}
+\captionsetup{font=small, labelfont=bf}
+\newcommand{\cod}[1]{\texttt{#1}}
+\newcommand{\pendiente}[1]{\textcolor{gray}{\textit{[Pendiente: #1]}}}
+
+\title{Asistente de agenda en lenguaje natural\\\large Práctica final · Procesamiento del Lenguaje Natural 2026/27}
+\author{Integrante 1 \and Integrante 2}
+\date{}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\section{Introducción y problema}\label{sec:intro}
+% Presupuesto: 1/2 página · Fase 1 (datos) + Fase 5 (metodología completa)
+
+Construimos un asistente de agenda al que se le escribe en lenguaje natural y que crea, consulta, modifica y borra eventos y tareas. Cada mensaje pasa por tres tareas de PLN:
+\begin{itemize}
+  \item \textbf{A · Intención}: clasificación en 8 clases (\cod{crear\_evento}, \cod{crear\_tarea}, \cod{consultar}, \cod{buscar}, \cod{completar}, \cod{modificar}, \cod{borrar}, \cod{otro}). Métrica: F1 macro.
+  \item \textbf{B · Extracción}: reconocimiento y normalización de 6 entidades (FECHA, HORA, LUGAR, PERSONA, ASIGNATURA, PRIORIDAD). Métrica: F1 micro; la detección del trozo y la normalización del valor se miden por separado.
+  \item \textbf{C · Entrada referida}: recuperación de la entrada de la agenda (30 entradas) a la que se refiere el mensaje. Métricas: acierto@1 y MRR.
+\end{itemize}
+Partimos de 150 frases etiquetadas (\cod{train.jsonl}) y una agenda de 30 entradas; ``hoy'' es el lunes 9 de febrero de 2026. Ampliamos el corpus a 385 frases (sección~\ref{sec:corpus}) y separamos una única vez un 20\,\% como validación, que no se usa nunca para entrenar, ni para elegir ejemplos \textit{few-shot} ni para diseñar reglas. Toda la evaluación se hace con \cod{evaluar.py}, el mismo script que usará el profesor con el test oculto.
+
+\pendiente{Fase 5: resumir en dos líneas qué enfoque se elige para cada tarea y el resultado principal.}
+
+% =====================================================================
+\section{Corpus}\label{sec:corpus}
+% Presupuesto: 1 página · Fase 1 (COMPLETADA)
+
+\paragraph{Ampliación.} \cod{train.jsonl} no contiene ninguna frase difícil, y el experimento E3 exige al menos 30 en validación. Con una validación del 20\,\% estratificada, eso implica unas 150 difíciles en total. Escribimos \textbf{235 frases propias} (\cod{g001}--\cod{g235}), de las que \textbf{156 son difíciles}, repartidas entre las 8 intenciones y reforzando las menos representadas en \cod{train} (\cod{borrar}, \cod{completar}, \cod{modificar}, \cod{otro}). El corpus ampliado tiene \textbf{385 frases} y 500 entidades (figura~\ref{fig:corpus}). Cada frase difícil lleva un campo propio \cod{dificultad} (que \cod{evaluar.py} ignora) con su tipo principal, para poder desglosar E3 (tabla~\ref{tab:dificultad}). En \cod{buscar}, \cod{completar}, \cod{modificar} y \cod{borrar}, la \cod{ref} apunta a una entrada real de la agenda; en \cod{completar}, siempre a una tarea. Las posiciones se calculan con \cod{anotar()} y se validan con \cod{comprobar()}. También comprobamos que ninguna frase propia coincide (en minúsculas) con una de \cod{train}, para evitar fugas entre particiones.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{corpus.png}
+  \caption{Corpus ampliado: frases por intención según origen y dificultad (izquierda) y menciones por tipo de entidad (derecha).}
+  \label{fig:corpus}
+\end{figure}
+
+\begin{table}[h]
+  \centering\small
+  \begin{tabular}{@{}llr@{}}
+    \toprule
+    Tipo & Ejemplo & Frases \\
+    \midrule
+    abreviatura    & «q tngo pasado mñn» & 41 \\
+    paráfrasis     & «Quita lo de los dientes» $\rightarrow$ Dentista & 22 \\
+    fecha relativa & «dentro de tres días», «del 16 al 20» & 18 \\
+    negación       & «No borres el dentista, solo muévelo a las 12» & 16 \\
+    mayúsculas     & «QUÉ TENGO EL VIERNES» & 14 \\
+    números en letras & «a las cuatro menos cuarto» & 12 \\
+    ortografía     & «ya e pagao la matricula» & 10 \\
+    fuera de dominio & «¿Qué tiempo hará el sábado?» & 10 \\
+    larga          & 7 entidades en una frase & 9 \\
+    contexto       & «Cena de empresa \dots{} a las 9» $\rightarrow$ 21:00 & 4 \\
+    \midrule
+    \multicolumn{2}{@{}l}{Total difíciles (normales: 79 propias + 150 de \cod{train})} & 156 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Tipos de dificultad de las frases propias.}
+  \label{tab:dificultad}
+\end{table}
+
+\paragraph{Decisiones de etiquetado.} Donde el enunciado no fija la convención, seguimos lo que hace \cod{train.jsonl}: «antes del viernes» $\rightarrow$ FECHA = «del viernes»; en \cod{modificar}, «al viernes» $\rightarrow$ «viernes»; las franjas vagas («por la tarde») no son HORA; «en casa de mi madre» no es LUGAR; en PERSONA se anota el nombre propio o el parentesco sin posesivo («mi primo Dani» $\rightarrow$ «Dani»). Decisiones nuestras: en las fechas negadas («no es el miércoles, es el jueves») se anotan todas las menciones, porque B reconoce menciones y elegir el valor nuevo le corresponde al asistente; «del 16 al 20» se normaliza como el intervalo \cod{2026-02-16/2026-02-20}.
+\pendiente{Revisión cruzada: número de discrepancias entre los dos integrantes y cómo se resolvieron.}
+
+\paragraph{Análisis exploratorio.} El corpus tiene 3\,357 palabras y un vocabulario de 588 tipos (en minúsculas; TTR $=0{,}18$); el 45\,\% del vocabulario son hápax. La distribución sigue la ley de Zipf (pendiente log-log $-1{,}04$, figura~\ref{fig:zipf}), con la cola aplanada propia de un corpus pequeño: el test oculto traerá muchas palabras no vistas, lo que favorece los n-gramas de caracteres y los embeddings preentrenados. Con stopwords, las palabras más frecuentes (\textit{el, de, la, a}) son las mismas en todas las clases. Sin ellas aparecen los verbos que discriminan (\textit{borra/quita/elimina} en \cod{borrar}; \textit{cambia/mueve/pasa} en \cod{modificar}; \textit{urgente/prisa} en \cod{crear\_tarea}). Pero la lista de spaCy también elimina \textit{ya}, \textit{qué} y \textit{cuándo}, que caracterizan \cod{completar}, \cod{consultar} y \cod{buscar}. Las concordancias muestran que «mañana» es la FECHA ``día siguiente'' en 25 de sus 30 apariciones. El resto son la franja horaria («por la mañana») o frases \cod{otro}, que por convención no llevan entidades. Los días de la semana aparecen a menudo dentro de expresiones más largas («el jueves de la semana que viene» = 19), así que la normalización de fechas tiene que operar sobre la expresión completa. FECHA es el tipo dominante (183 de 500 entidades, figura~\ref{fig:corpus}), de modo que el F1 micro de B dependerá sobre todo de resolver bien las fechas. \cod{buscar}, \cod{completar} y \cod{borrar} apenas llevan entidades: la tarea C tiene que apoyarse en las palabras de contenido.
+
+\begin{figure}[h]
+  \centering
+  \begin{minipage}[c]{0.46\linewidth}
+    \includegraphics[width=\linewidth]{zipf.png}
+    \captionof{figure}{Ley de Zipf en el corpus ampliado.}
+    \label{fig:zipf}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.5\linewidth}
+    \centering\small
+    \begin{tabular}{@{}lrrrr@{}}
+      \toprule
+      Tipo & TP & FP & FN & F1 \\
+      \midrule
+      PERSONA (PER) & 65 & 28 & 24 & 0,71 \\
+      LUGAR (LOC)   & 5  & 12 & 41 & 0,16 \\
+      \bottomrule
+    \end{tabular}
+    \captionof{table}{NER de spaCy (\cod{es\_core\_news\_md}) frente a nuestras etiquetas, comparando el texto normalizado como en \cod{evaluar.py}.}
+    \label{tab:spacy}
+  \end{minipage}
+\end{figure}
+
+\paragraph{Recursos lingüísticos (spaCy).} Con texto estándar, la tokenización, el POS y la lematización son correctos (\textit{tengo} $\rightarrow$ \textit{tener}, \textit{Javier} PROPN). Con lenguaje de mensajería, el modelo se rompe: en «q tngo mñn x la mñn» etiqueta todos los tokens como PROPN y propone «q tngo mñn x» como PER. Los clíticos también le fallan: \textit{márcalo} sale como PER y lematiza \textit{muévelo} como «muéveloir». En NER (tabla~\ref{tab:spacy}), spaCy solo tiene PER/LOC/ORG/MISC. PERSONA funciona razonablemente con nombres propios con mayúscula, pero se le escapan los parentescos («madre», «abuela») y los nombres en minúscula, y marca como persona verbos al principio de la frase («Tacha», «Adiós») y empresas («Indra»). LUGAR apenas funciona, porque nuestros lugares son nombres comunes con número («despacho 3204», «biblioteca») y no topónimos. Las asignaturas salen como ORG/MISC y no hay nada para FECHA, HORA ni PRIORIDAD. Conclusión para B2: spaCy para PERSONA completado con una lista de parentescos, y reglas para LUGAR y para el resto.
+
+\paragraph{Preprocesado.} La función \cod{normalizar} (en \cod{utilidades.py}) es configurable:
+\begin{itemize}
+  \item minúsculas;
+  \item tildes, conservando la ñ;
+  \item diccionario de abreviaturas de mensajería (\textit{q, tngo, mñn, xq, bbdd}\dots);
+  \item números escritos con letras («cinco» $\rightarrow$ 5; «una» solo en «la una»);
+  \item stopwords de spaCy, excepto negaciones, interrogativos, palabras temporales y números;
+  \item stemming Snowball o lematización con spaCy.
+\end{itemize}
+La tabla~\ref{tab:prepro} muestra que cada paso reduce la dispersión del vocabulario. Su efecto sobre los clasificadores se mide en E2 (sección~\ref{sec:experimentos}).
+
+\begin{table}[h]
+  \centering\small
+  \begin{tabular}{@{}lrrl@{}}
+    \toprule
+    Configuración & Tokens & Vocabulario & «No borres el dentista, muévelo a la una» \\
+    \midrule
+    original                 & 3\,356 & 706 & No borres el dentista, muévelo a la una \\
+    minúsculas + tildes      & 3\,356 & 569 & no borres el dentista, muevelo a la una \\
+    + abreviaturas y números & 3\,374 & 551 & no borres el dentista , muévelo a la 1 \\
+    + sin stopwords          & 1\,903 & 475 & no borres dentista , muévelo 1 \\
+    + stemming               & 1\,903 & 387 & no borr dentist , muevel 1 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Efecto acumulado del preprocesado sobre el corpus.}
+  \label{tab:prepro}
+\end{table}
+
+\paragraph{Partición.} \cod{train\_test\_split} con \cod{random\_state=0} y estratificación por \textbf{intención y dificultad}: 308 frases de entrenamiento y 77 de validación, de las que \textbf{31 son difíciles} (de 10 tipos distintos) y 36 tienen \cod{ref} (tarea C). Se guardan en \cod{mi\_train.jsonl} y \cod{mi\_validacion.jsonl} y no se regeneran.
+
+% =====================================================================
+\section{Enfoques}\label{sec:enfoques}
+% Presupuesto: 1,5 páginas · Fases 2-4. Descripción breve y decisiones de diseño (sin repetir teoría).
+
+\subsection{Tarea A · Intención}
+\pendiente{Fase 2: A1 reglas, A2 BoW + NB, A3 TF-IDF + RL, A4 Word2Vec, A5 vectores preentrenados. Fase 3: A6 embeddings de frase + RL, A7 + RF/MLP, A8 LLM zero/few-shot.}
+
+\subsection{Tarea B · Extracción}
+\pendiente{Fase 4: normalización (\cod{normalizacion.py}), B1 reglas, B2 spaCy + reglas, B3 BETO + MLP/RF (BIO), B4 LLM con JSON.}
+
+\subsection{Tarea C · Entrada referida}
+\pendiente{Fase 4: documento de cada entrada, C1 palabras clave, C2 BM25/TF-IDF, C3 embeddings estáticos, C4 embeddings de frase, C5 híbrido (RRF), C6 re-ranking con LLM.}
+
+% =====================================================================
+\section{Tabla comparativa y discusión}\label{sec:tabla}
+% Presupuesto: 2 páginas · Fases 2-5. Una fila por enfoque; columnas del enunciado.
+
+\pendiente{Fase 5: tres tablas (A, B, C) con: métrica principal, frases normales, frases difíciles, datos de entrenamiento, ms por frase, tamaño del modelo, ¿interpretable? + comentario por tarea.}
+
+% =====================================================================
+\section{Experimentos}\label{sec:experimentos}
+% Presupuesto: 3 páginas · Fases 2, 3 y 5.
+
+\subsection{E1 · Curva de aprendizaje}
+\pendiente{Fases 2-3: figura con A2, A3, A6, A7 (25/50/100/todas, $\geq$3 semillas, media $\pm$ desviación) y A8 como línea horizontal.}
+
+\subsection{E2 · Ablación del preprocesado}
+\pendiente{Fases 2-3: tabla \{original, normalizado, sin stopwords, stemming\} $\times$ \{A2, A3, A6\}.}
+
+\subsection{E3 · Robustez}
+\pendiente{Fase 5: normales vs.\ difíciles para cada enfoque de A, B y C, desglosado por el campo \cod{dificultad}.}
+
+\subsection{E4 · Análisis de errores}
+\pendiente{Fase 5: $\geq$10 errores por familia agrupados por causa; mejora para la causa más frecuente con resultado antes/después.}
+
+% =====================================================================
+\section{Elección justificada por tarea}\label{sec:eleccion}
+% Presupuesto: 1,5 páginas · Fase 5. Calidad, coste, latencia y riesgo.
+
+\pendiente{Fase 5: un enfoque por tarea, con argumentos de calidad, coste, latencia y riesgo (alucinación, inyección de instrucciones, fragilidad de las reglas). Valorar híbridos.}
+
+% =====================================================================
+\section{El asistente}\label{sec:asistente}
+% Presupuesto: 1 página · Fase 6.
+
+\pendiente{Fase 6: arquitectura (A $\rightarrow$ B $\rightarrow$ C $\rightarrow$ acción), estado de diálogo, salvaguardas fuera del modelo, solapamientos, desambiguación y resultado de los 14 casos de la demo.}
+
+% =====================================================================
+\section{Limitaciones y trabajo futuro}\label{sec:limitaciones}
+% Presupuesto: 1/2 página · se va completando en cada fase.
+
+\begin{itemize}
+  \item \textbf{Corpus pequeño y escrito por nosotros}: 385 frases, el 45\,\% del vocabulario son hápax y las frases difíciles las hemos escrito nosotros mismos, con el riesgo de que reflejen nuestro estilo y no el del test oculto.
+  \item \textbf{Fecha fija}: todas las fechas relativas se resuelven respecto al 9-2-2026; algunas expresiones («el próximo martes», «el finde que viene») son ambiguas y las hemos evitado en el corpus.
+\end{itemize}
+\pendiente{Fases 2-6: añadir las limitaciones que aparezcan.}
+
+% =====================================================================
+\section{Uso de IA generativa}\label{sec:ia}
+% Presupuesto: 1/2 página.
+
+\pendiente{A completar por el grupo.}
+
+% =====================================================================
+\section{Reproducibilidad}\label{sec:repro}
+% Presupuesto: 1/4 página · se va completando en cada fase.
+
+Python 3.12 con las versiones fijadas en \cod{requirements.txt} (spaCy 3.8 con \cod{es\_core\_news\_md} 3.8.0, scikit-learn 1.9, NLTK 3.10). Semilla \cod{random\_state=0} en la partición. Orden de ejecución: \cod{1\_corpus} $\rightarrow$ \cod{2A}, \cod{2B}, \cod{2C} $\rightarrow$ \cod{3\_evaluacion} $\rightarrow$ \cod{4\_asistente}. Las figuras de esta memoria se generan en los notebooks y se guardan en \cod{resultados/}.
+\pendiente{Fases 2-6: semillas de los modelos, modelos guardados en \cod{modelos/}, hardware y tiempos.}
+
+\end{document}

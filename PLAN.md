@@ -23,6 +23,7 @@
 3. Toda evaluación pasa por **`evaluar.py`** (es el mismo script que usará el profesor).
 4. `generar_predicciones(ruta_textos, ruta_salida)` debe funcionar **sin etiquetas** y de forma **reproducible** (modelos guardados en disco, semillas fijas).
 5. Documentar **todo** uso de IA generativa (incluida esta guía) — puede haber entrevista individual: ambos miembros deben entender todo el código.
+6. **La memoria se escribe a la vez que el código**: `memoria/memoria.tex` (LaTeX, compila con `pdflatex` desde `memoria/`, figuras desde `../resultados/`). Al completar cada fase se rellena su sección con resultados reales, tablas y figuras generadas por los notebooks (guardadas en `resultados/` con `savefig`), y se quitan sus marcas `\pendiente{...}`. Una fase no está terminada hasta que su sección de la memoria está escrita.
 
 ---
 
@@ -54,7 +55,7 @@ natural-language-scheduler/
 ├── datos/                      (opcional) mis_frases.jsonl, mi_train.jsonl, mi_validacion.jsonl
 ├── modelos/                    ← modelos entrenados (.joblib), embeddings cacheados (.npy)
 ├── resultados/                 ← resultados_A/B/C.json, figuras para la memoria
-└── memoria/                    ← fuente de la memoria (LaTeX/Docs) + figuras
+└── memoria/                    ← memoria.tex (LaTeX); las figuras se leen de ../resultados/
 ```
 
 > Las plantillas asumen que notebooks, `utilidades.py`, `evaluar.py` y los `.jsonl` están **en la misma carpeta**: copiad los notebooks de `plantillas/` a la raíz y trabajad ahí.
@@ -98,6 +99,8 @@ Añadir al `.gitignore`: `modelos/*.bin`, cachés de HuggingFace grandes; **sí*
 
 **Hecho cuando:** corpus ≥250 frases (recomendado ~370), `comprobar()` pasa, validación con ≥30 difíciles, `normalizar` en `utilidades.py`.
 
+**Memoria:** §2 Corpus completa (figuras `corpus.png` y `zipf.png`, tablas de dificultad, spaCy y preprocesado), §1 datos y metodología, primeras limitaciones y reproducibilidad. ✅
+
 ---
 
 ## FASE 2 · Tarea A con enfoques clásicos (tras Tema 4) → `2A_intencion.ipynb`
@@ -122,6 +125,8 @@ Cada enfoque es `predecir(textos) -> intenciones` y se registra con `registrar(n
 
 **Hecho cuando:** A1–A5 registrados con métricas reales y E1/E2 funcionando para A2/A3.
 
+**Memoria:** §3.1 (A1–A5: decisiones de diseño), primeras filas de la tabla A en §4, borrador de E1 y E2 en §5 con sus figuras/tablas.
+
 ---
 
 ## FASE 3 · Tarea A con Transformers y LLM (tras Tema 4, parte 2) → `2A_intencion.ipynb`
@@ -137,6 +142,8 @@ Cada enfoque es `predecir(textos) -> intenciones` y se registra con `registrar(n
 - Elegir enfoque de A y exportar `predecir_intencion(texto)` a `tarea_a.py` (cargando modelo desde `modelos/`).
 
 **Hecho cuando:** `resultados_A.json` contiene A1–A8 (A7 dos filas, A8 dos filas), y `tarea_a.py` funciona aislado.
+
+**Memoria:** §3.1 completa (A6–A8, prompt del LLM, respuestas inválidas), tabla A completa en §4, E1 (figura `curva_aprendizaje.png`) y E2 (tabla) definitivos en §5.
 
 ---
 
@@ -181,6 +188,8 @@ Exportar `ranking_agenda(texto, agenda)` a `tarea_c.py`.
 
 **Hecho cuando:** `resultados_B.json` y `resultados_C.json` completos, y `tarea_b.py` / `tarea_c.py` funcionan aislados.
 
+**Memoria:** §3.2 y §3.3 (B1–B4, C1–C6 y la normalización), tablas B y C en §4 (con detección del trozo vs. normalización por separado).
+
 ---
 
 ## FASE 5 · Evaluación y experimentos → `3_evaluacion.ipynb` (P1 + P2)
@@ -202,6 +211,8 @@ Rellenar las columnas manuales (datos de entrenamiento: «0 / reglas», «~290 f
 - Probar en un entorno limpio: reiniciar kernel, ejecutar solo esa celda.
 
 **Hecho cuando:** tabla completa, 4 experimentos con figuras y comentarios, `generar_predicciones` verificada.
+
+**Memoria:** §4 con comentario por tarea, §5 completo (E3 desglosado por el campo `dificultad`, E4 con la mejora antes/después), §6 elección justificada por tarea, resumen de resultados en §1.
 
 ---
 
@@ -239,11 +250,13 @@ Rellenar las columnas manuales (datos de entrenamiento: «0 / reglas», «~290 f
 
 **Hecho cuando:** los 14 casos se comportan como se pide y la celda final se ejecuta limpia.
 
+**Memoria:** §7 el asistente (arquitectura, diálogo, salvaguardas y tabla con el resultado de los 14 casos).
+
 ---
 
 ## FASE 7 · Memoria (≤12 páginas) y entrega (P1 + P2)
 
-Empezar la memoria **en paralelo desde la Fase 2** (ir guardando figuras en `resultados/` y anotando decisiones).
+La memoria (`memoria/memoria.tex`) se ha ido rellenando al cerrar cada fase (regla 6). En esta fase solo queda: revisar que no quede ningún `\pendiente{...}`, ajustar a **≤12 páginas**, completar §8–§10, revisión cruzada del texto y compilar `memoria.pdf`.
 
 ### Estructura sugerida y presupuesto de páginas
 1. **Introducción y problema** (½ pág.): tareas A/B/C, datos, metodología de evaluación.

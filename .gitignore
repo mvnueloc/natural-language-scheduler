@@ -35,3 +35,12 @@ modelos/*.safetensors
 modelos/*.pt
 *.npy
 !modelos/.gitkeep
+
+# LaTeX (memoria)
+memoria/*.aux
+memoria/*.log
+memoria/*.out
+memoria/*.toc
+memoria/*.synctex.gz
+memoria/*.fls
+memoria/*.fdb_latexmk
