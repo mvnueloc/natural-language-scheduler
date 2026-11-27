@@ -28,3 +28,10 @@ htmlcov/
 .env
 .env.*
 !.env.example
+# Práctica PLN
+cache_llm/
+modelos/*.bin
+modelos/*.safetensors
+modelos/*.pt
+*.npy
+!modelos/.gitkeep

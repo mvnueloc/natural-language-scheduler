@@ -1,0 +1,16 @@
+# Dependencias directas de la práctica (fijadas en requirements.txt con: uv pip compile requirements.in -o requirements.txt)
+numpy
+pandas
+scikit-learn
+matplotlib
+joblib
+nltk
+spacy
+gensim
+rank-bm25
+torch
+transformers
+accelerate
+sentence-transformers
+jupyter
+ipykernel
